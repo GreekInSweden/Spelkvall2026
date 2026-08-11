@@ -37,14 +37,16 @@ export default function GameHost({ gameId }: { gameId: string }) {
 
   async function handleFinish(score: number) {
     setSaving(true);
+    setError("");
     try {
       await recordScore(gameId, score);
-    } catch (e) {
-      setError(friendlyError(e));
-    } finally {
       setSaving(false);
-      // Ge spelaren en kort stund att se sin sista skärm innan vi går tillbaka.
-      setTimeout(() => router.push("/"), 400);
+      // Bara vid lyckad sparning navigerar vi automatiskt tillbaka.
+      setTimeout(() => router.push("/"), 600);
+    } catch (e) {
+      setSaving(false);
+      setError(friendlyError(e));
+      // Vid fel: stanna kvar så felet syns, ingen auto-redirect.
     }
   }
 
@@ -71,15 +73,28 @@ export default function GameHost({ gameId }: { gameId: string }) {
 
   return (
     <div>
-      {error && <p className="ordel-message is-visible">{error}</p>}
-      {saving && <p className="stat-empty">Sparar…</p>}
-      {gameId === "reaktion" && <Reaktion onFinish={handleFinish} />}
-      {gameId === "minne" && <Minne onFinish={handleFinish} />}
-      {gameId === "ordel5" && <Ordel wordLength={5} onFinish={handleFinish} />}
-      {gameId === "ordel6" && <Ordel wordLength={6} onFinish={handleFinish} />}
-      {gameId === "skrambel" && <Skrambel onFinish={handleFinish} />}
-      {gameId === "uppskatta" && <Uppskatta onFinish={handleFinish} />}
-      {gameId === "bokstavsjakt" && <Bokstavsjakt onFinish={handleFinish} />}
+      {error && (
+        <div className="ordel-wrap">
+          <p className="ordel-message is-visible" style={{ fontSize: 15 }}>
+            Kunde inte spara resultatet: {error}
+          </p>
+          <button className="no-group-btn" onClick={() => router.push("/")}>
+            Tillbaka
+          </button>
+        </div>
+      )}
+      {!error && saving && <p className="stat-empty">Sparar…</p>}
+      {!error && !saving && (
+        <>
+          {gameId === "reaktion" && <Reaktion onFinish={handleFinish} />}
+          {gameId === "minne" && <Minne onFinish={handleFinish} />}
+          {gameId === "ordel5" && <Ordel wordLength={5} onFinish={handleFinish} />}
+          {gameId === "ordel6" && <Ordel wordLength={6} onFinish={handleFinish} />}
+          {gameId === "skrambel" && <Skrambel onFinish={handleFinish} />}
+          {gameId === "uppskatta" && <Uppskatta onFinish={handleFinish} />}
+          {gameId === "bokstavsjakt" && <Bokstavsjakt onFinish={handleFinish} />}
+        </>
+      )}
     </div>
   );
 }
